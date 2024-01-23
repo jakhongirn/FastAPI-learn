@@ -1,34 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from product_data import PRODUCTS
+from schemas import Product, ProductCreate
 from typing import List, Dict
 
 
 app = FastAPI(title="Learn FastAPI")
 
-PRODUCTS: List[Dict[str, str | int]] = [
-    {
-        "id": 1,
-        "label": "Iphone 15 Pro",
-        "brand": "Apple",
-        "url": "http://www.seriouseats.com/products/2011/12/chicken-vesuvio-product.html",
-    },
-    {
-        "id": 2,
-        "label": "Samsung Galaxy S24",
-        "brand": "Samsung",
-        "url": "http://noproducts.com/product/chicken-paprikash/",
-    },
-    {
-        "id": 3,
-        "label": "HP Pavilion Gaming",
-        "brand": "Hewlett Packard",
-        "url": "http://www.seriouseats.com/products/2011/02/cauliflower-and-tofu-curry-product.html",
-    },
-]
-
 @app.get("/")
 async def root():
     return {"message": "Hello world!"}
 
+@app.get("/products/", status_code=200)
+async def get_all_products():
+    """
+        Get all products in the list
+    """
+    
+    products = PRODUCTS
+    return products
 
 @app.get("/product/{product_id}", status_code=200)
 async def get_product(*, product_id: int = 0) -> dict:
@@ -37,11 +26,9 @@ async def get_product(*, product_id: int = 0) -> dict:
     result = [product for product in PRODUCTS if product["id"] == product_id]
     
     print(result)
-    if result:
-        return result[0]
-    else:
-        return {"message": "There is no products assigned with given id."}
-
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found")
+    return result[0]
 
 @app.get("/search/", status_code=200)
 async def search_products(keyword: str | None = None, max_results: int | None = 5):
@@ -61,3 +48,20 @@ async def search_products(keyword: str | None = None, max_results: int | None = 
     
     return {"results": list(results)[:max_results]}
 
+
+@app.post("/product", status_code=201, response_model=Product)
+async def create_product(*, product_in: ProductCreate) -> dict:
+    """
+        Create a new product (in memory only)
+    """
+    
+    new_prod_id = len(PRODUCTS) + 1
+    new_product = Product(
+        id=new_prod_id,
+        label=product_in.label,
+        brand=product_in.brand,
+        url=product_in.url
+    ).dict()
+    PRODUCTS.append(new_product)
+    
+    return new_product
