@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from product_data import PRODUCTS
-from schemas import Product, ProductCreate
+from schemas.product import Product, ProductCreate
 from typing import List, Dict
 
 
