@@ -1,4 +1,5 @@
 import logging
+from app.db.init_db import init_db
 
 from db.base_class import Base
 from app.db.session import SessionLocal
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 def init() -> None:
     db = SessionLocal()
+    init_db(db)
     
 
 
