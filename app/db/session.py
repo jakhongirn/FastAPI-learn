@@ -1,10 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DB_URL = "sqlite:///example.db"
+SQLALCHEMY_DATABASE_URI = "sqlite:///example.db"
 
 engine = create_engine(
-    SQLALCHEMY_DB_URL,
+    SQLALCHEMY_DATABASE_URI,
     # required for sqlite
     connect_args={"check_same_thread": False},
 )
