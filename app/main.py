@@ -1,81 +1,86 @@
-from fastapi import FastAPI, HTTPException, Request, Depends
-from product_data import PRODUCTS
-from schemas.product import Product, ProductCreate
-from typing import List, Dict
-from db.session import Session
-import crud
-import deps
+from fastapi import FastAPI, APIRouter, Query, HTTPException, Request, Depends
+from app.product_data import PRODUCTS
+from app.schemas.product import Product, ProductCreate
+from typing import List, Dict, Optional
+from sqlalchemy.orm import Session
+from app import crud
+from app import deps
+
+app = FastAPI(title="Learn FastAPI", openapi_url="/openapi.json")
+
+api_router = APIRouter()
 
 
-app = FastAPI(title="Learn FastAPI")
-
-@app.get("/", status_code=200)
-async def root(
-    request: Request,
-    db: Session = Depends(deps.get_db)
-) -> dict:
+@api_router.get("/", status_code=200)
+async def root(request: Request, db: Session = Depends(deps.get_db)) -> dict:
     """
     Root GET
     """
-    
+
     products = crud.product.get_multi(db=db, limit=10)
-    return TEMPLATES.TemplateResponse("index.html", {"request": request, "products": products})
-    
-    
-    
-@app.get("/products/", status_code=200)
-async def get_all_products():
-    """
-        Get all products in the list
-    """
-    
-    products = PRODUCTS
     return products
 
-@app.get("/product/{product_id}", status_code=200)
+
+@api_router.get("/products/", status_code=200)
+async def get_all_products(db: Session = Depends(deps.get_db)) -> dict:
+    """
+    Get all products in the list
+    """
+
+    products = crud.product.get_multi(db=db)
+    return products
+
+
+@api_router.get("/product/{product_id}", status_code=200)
 async def get_product(
-    *, 
-    product_id: int = 0,
-    db: Session = Depends(deps.get_db)
-    ) -> dict:
-    """ Get a single product by ID """
-    
+    *, product_id: int = 0, db: Session = Depends(deps.get_db)
+) -> dict:
+    """Get a single product by ID"""
+
     result = crud.product.get(db=db, id=product_id)
-    if not result: 
-        raise HTTPException(status_code=404, detail=f"Product with ID {product_id} not found!")
+    if not result:
+        raise HTTPException(
+            status_code=404, detail=f"Product with ID {product_id} not found!"
+        )
     return result
-    
 
 
-@app.get("/search/", status_code=200)
-async def search_products(keyword: str | None = None, max_results: int | None = 5):
-    """Search for products based on label keyword"""
-    if not keyword: 
-        return {"results": PRODUCTS[:max_results]}
-    
-    # Anoter simple solution
-    # results = []
-    # for product in PRODUCTS:
-    #     if keyword.lower() in product["label"].lower():
-    #         results.append(product)
-    # if not results:
-    #     return {"message": "There is no product with given keyword."}
-    
-    results = filter(lambda product: keyword.lower() in product["label"].lower(), PRODUCTS)
-    
+@api_router.get("/search/", status_code=200)
+async def search_products(
+    *,
+    keyword: Optional[str] = Query(None, min_length=3, example="chicken"),
+    max_results: Optional[int] = 10,
+    db: Session = Depends(deps.get_db),
+) -> dict:
+    """
+    Search for products based on label keyword
+    """
+    products = crud.recipe.get_multi(db=db, limit=max_results)
+    if not keyword:
+        return {"results": products}
+
+    results = filter(lambda recipe: keyword.lower() in recipe.label.lower(), products)
     return {"results": list(results)[:max_results]}
 
 
-@app.post("/product", status_code=201, response_model=Product)
+@api_router.post("/product", status_code=201, response_model=Product)
 async def create_product(
-    *, 
-    product_in: ProductCreate,
-    db:Session = Depends(deps.get_db)
-    ) -> dict:
+    *, product_in: ProductCreate, db: Session = Depends(deps.get_db)
+) -> dict:
     """
-        Create a new product (in memory only)
+    Create a new product (in memory only)
     """
-    
+
     new_product = crud.product.create(db=db, obj_in=product_in)
-    
+
     return new_product
+
+
+app.include_router(api_router)
+
+
+if __name__ == "__main__":
+    # Use this for debugging purposes only
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8001, log_level="debug")
