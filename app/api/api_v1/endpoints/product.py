@@ -4,7 +4,7 @@ from app.schemas.product import Product, ProductCreate
 from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 from app import crud
-from app import deps
+from app.api.api_v1 import deps
 import httpx 
 import asyncio
 

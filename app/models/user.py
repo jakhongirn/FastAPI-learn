@@ -11,3 +11,4 @@ class User(Base):
     is_superuser=Column(Boolean, default=False)
     products = relationship("Product", cascade="all, delete-orphan", back_populates="submitter", uselist=True)
     
+    hashed_password = Column(String, nullable=False)
