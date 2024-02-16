@@ -8,6 +8,7 @@ from app.api.api_v1 import deps
 import httpx 
 import asyncio
 from app.clients.reddit import RedditClient
+from app.models.user import User
 
 router = APIRouter()
 
@@ -102,7 +103,7 @@ async def get_reddit_top_async(subreddit: str, data: dict) -> None:  # 2
 
 
 @router.get("/ideas/async")
-async def fetch_ideas_async() -> dict:
+async def fetch_ideas_async(user: User = Depends(deps.get_current_active_superuser)) -> dict:
     data: dict = {}
 
     await asyncio.gather(  # 5
