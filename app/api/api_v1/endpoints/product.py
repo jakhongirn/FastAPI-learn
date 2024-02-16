@@ -7,6 +7,7 @@ from app import crud
 from app.api.api_v1 import deps
 import httpx 
 import asyncio
+from app.clients.reddit import RedditClient
 
 router = APIRouter()
 
@@ -113,11 +114,11 @@ async def fetch_ideas_async() -> dict:
     return data
     
 @router.get("/ideas/")
-def fetch_ideas() -> dict:
+def fetch_ideas(reddit_client: RedditClient = Depends(deps.get_reddit_client)) -> dict:
     data: dict = {}
-    get_reddit_top("recipes", data)
-    get_reddit_top("easyrecipes", data)
-    get_reddit_top("TopSecretRecipes", data)
-
+    for subreddit in ["recipes", "easyrecipes", "TopSecretRecipes"]:
+        entry = reddit_client.get_reddit_top(subreddit=subreddit)
+        data[subreddit] = entry
+        
     return data
 

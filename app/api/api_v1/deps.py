@@ -8,6 +8,7 @@ from sqlalchemy.orm.session import Session
 from app.models.user import User
 from jose import jwt, JWTError
 from app.core.config import settings
+from app.clients.reddit import RedditClient
 
 class TokenData(BaseModel):
     username: Optional[str] = None
@@ -43,4 +44,7 @@ def get_current_user(
     if user is None:
         raise credentials_exception
     return user
-        
+
+
+def get_reddit_client() -> RedditClient:
+    return RedditClient()
